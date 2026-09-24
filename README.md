@@ -1,3 +1,5 @@
+<div dir="rtl" align="right">
+
 # המכשירים בבית · Home Network Inventory
 
 ממשק בעברית לניהול **ידני** של רשימת המכשירים ברשת הביתית. המידע נשמר בשרת מקומי שלך, והטלפון והמחשב מציגים את אותה רשימה דרך הדפדפן. אין גילוי מכשירים אוטומטי ואין צורך ב־Home Assistant.
@@ -32,6 +34,8 @@
 
 התחבר לשרת ב־SSH כמשתמש רגיל (לא `root`) והריץ:
 
+<div dir="ltr" align="left">
+
 ```bash
 sudo apt update
 sudo apt install -y git python3-venv iputils-ping iproute2
@@ -41,24 +45,36 @@ cd home-network-inventory
 bash install.sh
 ```
 
+</div>
+
 
 סקריפט ההתקנה יוצר סביבת Python, מתקין את התלויות, מזהה את שם המשתמש ואת תיקיית הפרויקט, בוחר פורט פנוי בטווח 8765–8799, ומגדיר שירות `home-inventory.service` שיעלה אחרי אתחול. בהתקנה חוזרת הוא משמר את הפורט שכבר הוגדר לשירות.
 
 הצג את כתובת השרת:
 
+<div dir="ltr" align="left">
+
 ```bash
 hostname -I
 ```
 
+</div>
+
 פתח בדפדפן בטלפון או במחשב שמחוברים לאותה רשת:
+
+<div dir="ltr" align="left">
 
 ```text
 http://IP-של-השרת:PORT
 ```
 
+</div>
+
 לדוגמה: `http://192.168.1.20:8765`. השתמש בפורט שהסקריפט הדפיס בסוף ההתקנה. ניתן להוסיף את הדף למסך הבית דרך תפריט הדפדפן בטלפון.
 
 ## עדכון
+
+<div dir="ltr" align="left">
 
 ```bash
 cd ~/home-network-inventory
@@ -67,6 +83,8 @@ git pull
 sudo systemctl restart home-inventory.service
 sudo systemctl status home-inventory.service --no-pager
 ```
+
+</div>
 
 אם שינית את שם תיקיית ההתקנה, היכנס אליה במקום `~/home-network-inventory`. הרצת `bash install.sh` מחדש תעדכן גם את יחידת השירות, תוך שמירה על הפורט הקיים.
 
@@ -87,11 +105,17 @@ sudo systemctl status home-inventory.service --no-pager
 
 לבדיקת השירות במקרה של תקלה:
 
+<div dir="ltr" align="left">
+
 ```bash
 sudo systemctl status home-inventory.service --no-pager
 sudo journalctl -u home-inventory.service -n 50 --no-pager
 ```
 
+</div>
+
 ## רישיון
 
 MIT — ראו [LICENSE](LICENSE).
+
+</div>
