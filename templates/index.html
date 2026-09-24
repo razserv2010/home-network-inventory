@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#12233b"><title>המכשירים בבית</title>
+  <style>
+    :root{font-family:Arial,Helvetica,sans-serif;color:#1a2e48;background:#f2f6fb;font-size:16px}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}header{background:#12233b;color:white;padding:22px max(20px,calc((100vw - 1150px)/2));display:flex;align-items:center;justify-content:space-between;gap:12px}h1{font-size:1.55rem;margin:0}main{max-width:1150px;margin:25px auto;padding:0 18px}.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px}.toolbar input,.toolbar select{background:white;border:1px solid #c9d5e5;border-radius:10px;padding:11px 13px;min-height:46px}.toolbar input{flex:1 1 245px}.toolbar select{flex:0 1 180px}.button{border:0;border-radius:10px;background:#1879bd;color:white;padding:11px 17px;min-height:46px;font-weight:700}.button.secondary{background:white;color:#234565;border:1px solid #c9d5e5}.button.danger{background:#fff1ef;color:#a43329}.button:disabled{opacity:.5;cursor:default}.button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #5bb6ed;outline-offset:2px}.panel{background:white;border:1px solid #dce5ef;border-radius:15px;overflow:hidden;box-shadow:0 8px 26px #213b5d0b}.panel-head{padding:15px 19px;border-bottom:1px solid #e9eef5;color:#526981}table{width:100%;border-collapse:collapse;text-align:right}th,td{padding:15px 12px;border-bottom:1px solid #e9eef5}th{font-size:.9rem;color:#556b82;background:#f9fbfe}tr:last-child td{border:0}.name{font-weight:700}.ip-status{display:inline-flex;direction:ltr;align-items:center;gap:8px;white-space:nowrap}.ping{display:inline-block;flex:none;width:11px;height:11px;border-radius:50%;background:#aebbc9}.ping.online{background:#14965b}.ping.offline{background:#d44a46}.sub{display:block;color:#6d8093;font-size:.85rem;margin-top:5px}code{font-size:.88rem;direction:ltr;unicode-bidi:isolate}.row-actions{display:flex;gap:7px;justify-content:flex-end}.small{padding:8px 11px;min-height:36px;font-size:.88rem}.empty{text-align:center;padding:56px 18px;color:#61778d}.empty strong{display:block;color:#1a2e48;margin-bottom:8px}.bulk{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:0 0 12px}.selection{width:20px;height:20px;cursor:pointer;accent-color:#1879bd}dialog{border:0;border-radius:17px;width:min(500px,calc(100vw - 24px));padding:0;box-shadow:0 25px 90px #0c1d3870}dialog::backdrop{background:#0c1d3899}.dialog-content{padding:25px}h2{font-size:1.3rem;margin:0 0 20px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:grid;gap:6px;font-weight:700;font-size:.9rem}.field.wide{grid-column:1/-1}.field input,.field textarea,.field select{padding:11px;border:1px solid #c9d5e5;border-radius:9px;min-width:0;width:100%;font-weight:400}.field textarea{resize:vertical;min-height:75px}.dialog-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:22px}.error{color:#b02c2c;min-height:20px;margin:12px 0 0}#toast{position:fixed;bottom:18px;left:18px;background:#12233b;color:white;padding:13px 17px;border-radius:10px;display:none;box-shadow:0 8px 30px #0003}@media(max-width:720px){header{padding:18px}main{margin:18px auto}.toolbar{gap:8px}.toolbar input{flex-basis:100%}.toolbar select{flex:1}table,tbody,tr,td{display:block}thead{display:none}tr{padding:16px;border-bottom:1px solid #e9eef5}td{border:0;padding:3px 0}td:before{content:attr(data-label);display:inline-block;color:#60768d;min-width:84px;font-size:.85rem}td:first-child:before,td:last-child:before{display:none}td:first-child{margin-bottom:7px}.row-actions{justify-content:flex-start;margin-top:12px}.fields{grid-template-columns:1fr}}
+    @media (max-width:720px) {
+      header { padding:16px; }
+      h1 { font-size:1.3rem; }
+      main { padding:0 14px; margin:16px auto; }
+      .toolbar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:14px; }
+      .toolbar input[type="search"], .toolbar #add { grid-column:1 / -1; }
+      .toolbar input, .toolbar select, .toolbar .button { width:100%; min-width:0; min-height:44px; font-size:.9rem; padding:9px 10px; }
+      .toolbar #add { font-size:1rem; }
+      .bulk { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+      .bulk .button { padding:9px 6px; min-height:42px; font-size:.9rem; }
+      #selectedCount { grid-column:1 / -1; }
+      #selectedCount:empty { display:none; }
+      .panel-head { padding:11px 15px; }
+      table, tbody { display:block; width:100%; }
+      tr { position:relative; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 12px; padding:16px; }
+      td { display:block; min-width:0; padding:0; border:0; text-align:right; }
+      td::before { content:attr(data-label); display:block; min-width:0; margin-bottom:3px; color:#60768d; font-size:.8rem; }
+      td:first-child { position:absolute; top:16px; left:16px; margin:0; }
+      td:first-child::before, td:nth-child(2)::before, td:nth-child(3)::before, td:last-child::before { display:none; }
+      td:nth-child(2) { grid-column:1 / -1; padding-left:38px; font-size:1.05rem; }
+      td:nth-child(3) { grid-column:1 / -1; padding:9px 11px; background:#f2f7fc; border-radius:9px; }
+      td:nth-child(4),td:nth-child(5),td:nth-child(6),td:nth-child(7) { padding:2px 0; overflow-wrap:anywhere; }
+      td:last-child { grid-column:1 / -1; margin-top:3px; }
+      .row-actions { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin:0; }
+      .row-actions .button { min-height:42px; }
+      .fields { grid-template-columns:1fr; }
+      .dialog-content { padding:18px; }
+    }
+    /* Shared visual language */
+    :root { background:#edf3fa; color:#172d49; }
+    header { background:linear-gradient(115deg,#122544,#1a4673); }
+    .panel { border-color:#cfddec; box-shadow:0 12px 34px rgba(20,58,100,.08); }
+    .panel-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; background:#f5f9fe; font-weight:700; color:#2d506f; }
+    .button { background:#176cb5; }
+    .button.secondary { color:#205172; }
+    .button.danger { background:#fff0ef; color:#a63138; }
+    .button:hover:not(:disabled) { filter:brightness(.96); }
+    .ping.online { background:#0d9e74; box-shadow:0 0 0 3px rgba(13,158,116,.13); }
+    .ping.offline { background:#d74a53; box-shadow:0 0 0 3px rgba(215,74,83,.12); }
+    .mobile-only { display:none; }
+    .toolbar { position:relative; }
+    .secondary-actions { display:none; position:absolute; top:calc(100% + 3px); inset-inline-end:0; z-index:10; width:min(240px,100%); padding:9px; background:white; border:1px solid #d3e1ee; border-radius:13px; box-shadow:0 18px 40px rgba(20,55,86,.2); }
+    .secondary-actions.open { display:grid; gap:7px; }
+    .secondary-actions .button { width:100%; text-align:right!important; }
+    .bulk[hidden] { display:none!important; }
+    .connection-summary { display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:0; color:#516b83; font-size:.9rem; }
+    .connection-summary span { padding:7px 11px; border-radius:999px; background:white; border:1px solid #d9e5f0; }
+    .connected-count b { color:#07825f; }
+    .disconnected-count b { color:#b63843; }
+    .connection-summary small { color:#698096; }
+    @media (max-width:720px) {
+      header { box-shadow:0 4px 16px rgba(18,37,68,.16); }
+      .toolbar { position:relative; }
+      .toolbar #add { grid-column:auto; }
+      .toolbar .mobile-only { display:block; }
+      .connection-summary { margin:0; gap:7px; font-size:.8rem; }
+      .connection-summary span { padding:6px 9px; }
+      .connection-summary small { width:100%; font-size:.75rem; }
+      .bulk { display:block; }
+      .bulk #deleteSelected:disabled { display:none; }
+      .bulk #deleteSelected:not(:disabled) { width:100%; margin-bottom:6px; }
+      #selectedCount { display:block; margin-bottom:6px; }
+      .panel { border:0; background:transparent; box-shadow:none; overflow:visible; }
+      .panel-head { border:0; padding:3px 1px 12px; background:transparent; align-items:flex-start; }
+      #content tr { border:1px solid #d5e2ef; border-radius:14px; background:white; margin-bottom:10px; box-shadow:0 5px 16px rgba(20,58,100,.06); gap:6px 12px; padding:14px; }
+      #content tr td:nth-child(2) { padding-left:38px; font-size:1rem; line-height:1.35; }
+      #content tr td:nth-child(3) { padding:0; background:transparent; }
+      #content tr td:nth-child(4),#content tr td:nth-child(5),#content tr td:nth-child(6),#content tr td:nth-child(7),#content tr td:last-child { display:none; }
+      #content tr.expanded td:nth-child(4),#content tr.expanded td:nth-child(5),#content tr.expanded td:nth-child(6),#content tr.expanded td:nth-child(7),#content tr.expanded td:last-child { display:block; }
+      #content tr.expanded td:last-child { border-top:1px solid #e5edf5; padding-top:10px; }
+      #content tr td:nth-child(4)::before,#content tr td:nth-child(5)::before,#content tr td:nth-child(6)::before,#content tr td:nth-child(7)::before { color:#68829a; }
+      #content .sub { display:none; }
+      #content tr.expanded .sub { display:block; }
+      .expand-button { display:block; border:0; background:transparent; color:#176cb5; padding:8px 0 0; font-size:.85rem; font-weight:700; }
+      .ip-status { gap:9px; }
+      .selection { width:22px; height:22px; }
+    }
+  </style>
+</head>
+<body>
+<header><h1>המכשירים בבית</h1></header>
+<main>
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="חיפוש לפי שם, MAC או IP" aria-label="חיפוש מכשירים">
+    <select id="typeFilter" aria-label="סינון לפי סוג מכשיר"><option value="">כל סוגי המכשירים</option></select>
+    <select id="componentFilter" aria-label="סינון לפי סוג רכיב"><option value="">כל סוגי הרכיבים</option></select>
+    <button class="button" id="add">+ הוספת מכשיר</button>
+    <button class="button secondary" id="moreButton" type="button" aria-controls="moreActions" aria-expanded="false">⋮ אפשרויות</button>
+    <div class="secondary-actions" id="moreActions">
+      <a class="button secondary" href="/backup.json" style="text-decoration:none;text-align:center">הורדת גיבוי</a>
+      <button class="button secondary" id="restoreButton">שחזור מגיבוי</button>
+      <button class="button danger" id="deleteAllMobile" disabled>מחיקת הכול</button>
+    </div>
+    <input id="backupFile" type="file" accept=".json,application/json" hidden>
+  </div>
+  <div class="bulk" id="bulkBar" hidden><button class="button danger" id="deleteSelected" disabled>מחיקת נבחרים</button><span id="selectedCount" aria-live="polite"></span></div>
+  <div class="panel"><div class="panel-head"><span id="summary">טוען מכשירים...</span><div class="connection-summary" id="statusSummary" aria-live="polite">בודק סטטוס מכשירים...</div></div><div id="content"></div></div>
+</main>
+<dialog id="editor"><form id="form" class="dialog-content"><h2 id="formTitle">הוספת מכשיר</h2>
+  <div class="fields">
+    <label class="field wide">שם מכשיר *<input name="name" required maxlength="120" placeholder="לדוגמה: טלוויזיה בסלון"></label>
+    <label class="field">כתובת MAC<input name="mac" inputmode="text" dir="ltr" placeholder="AA:BB:CC:DD:EE:FF"></label>
+    <label class="field">כתובת IP<input name="ip" inputmode="decimal" dir="ltr" placeholder="192.168.0.50"></label>
+    <label class="field">סוג מכשיר<input name="type" list="suggestedTypes" maxlength="80" placeholder="לדוגמה: Raspberry Pi 5"></label>
+    <label class="field">סוג רכיב<input name="component" maxlength="80" placeholder="לדוגמה: ESP-32"></label>
+    <label class="field wide">קישוריות<input name="connectivity" maxlength="80" placeholder="לדוגמה: LAN / WIFI / שם הרשת"></label>
+    <datalist id="suggestedTypes"><option value="טלפון"><option value="מחשב"><option value="טלוויזיה"><option value="מצלמה"><option value="בית חכם"><option value="שרת"><option value="מדפסת"><option value="נתב"></datalist>
+    <label class="field wide">הערות<textarea name="notes" maxlength="1000" placeholder="מיקום או מידע נוסף"></textarea></label>
+  </div><p class="error" id="formError" role="alert"></p><div class="dialog-actions"><button type="button" class="button secondary" id="cancel">ביטול</button><button class="button" type="submit">שמירה</button></div>
+</form></dialog><div id="toast" role="status"></div>
+<script>
+const $=id=>document.getElementById(id);
+let devices=[], statuses={}, selected=new Set(), expanded=new Set(), statusesLoaded=false, editing=null;
+const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(message){$('toast').textContent=message;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',3500)}
+async function load(){try{const r=await fetch('/api/devices');if(!r.ok)throw Error('לא ניתן לטעון את הרשימה');devices=await r.json();selected=new Set([...selected].filter(id=>devices.some(d=>d.id===id)));expanded=new Set([...expanded].filter(id=>devices.some(d=>d.id===id)));render();refreshStatus()}catch(e){$('summary').textContent=e.message}}
+function updateFilter(id,key,label){const values=[...new Set(devices.map(d=>d[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'he'));const old=$(id).value;$(id).innerHTML=`<option value="">${label}</option>`+values.map(v=>`<option value="${escapeHTML(v)}">${escapeHTML(v)}</option>`).join('');$(id).value=values.includes(old)?old:''}
+function statusDot(d){const state=d.ip?(statuses[d.id]||'checking'):'no_ip';const labels={online:'מחובר לרשת',offline:'לא מחובר לרשת',no_ip:'אין כתובת IP',checking:'בודק...',unavailable:'בדיקה אינה זמינה'};return `<span class="ping ${state}" role="img" aria-label="${labels[state]}" title="${labels[state]}"></span>`}
+function ipCell(d){if(!d.ip)return '—';const host=d.ip.includes(':')?`[${d.ip}]`:d.ip;return `<span class="ip-status"><a href="http://${escapeHTML(host)}/" target="_blank" rel="noopener noreferrer"><code>${escapeHTML(d.ip)}</code></a>${statusDot(d)}</span>`}
+function visibleDevices(){const q=$('search').value.trim().toLowerCase();return devices.filter(d=>(!$('typeFilter').value||d.type===$('typeFilter').value)&&(!$('componentFilter').value||d.component===$('componentFilter').value)&&[d.name,d.mac,d.ip,d.type,d.component,d.connectivity,d.notes].some(v=>String(v||'').toLowerCase().includes(q)))}
+function render(){updateFilter('typeFilter','type','כל סוגי המכשירים');updateFilter('componentFilter','component','כל סוגי הרכיבים');const shown=visibleDevices();$('summary').textContent=shown.length===devices.length?(devices.length===1?'מכשיר אחד':`${devices.length} מכשירים`):`מוצגים ${shown.length} מתוך ${devices.length}`;$('bulkBar').hidden=!selected.size;$('deleteAllMobile').disabled=!devices.length;const online=devices.filter(d=>statuses[d.id]==='online').length;const offline=devices.filter(d=>statuses[d.id]==='offline').length;$('statusSummary').innerHTML=statusesLoaded?`<span class="connected-count"><b>${online}</b> מחוברים לרשת</span><span class="disconnected-count"><b>${offline}</b> לא מחוברים לרשת</span>`:'בודק סטטוס מכשירים...';$('deleteSelected').disabled=!selected.size;$('deleteSelected').textContent=`מחיקת נבחרים${selected.size?` (${selected.size})`:''}`;$('selectedCount').textContent=selected.size?`${selected.size} נבחרו`:'';
+$('content').innerHTML=shown.length?`<table><thead><tr><th><input class="selection" type="checkbox" id="selectAll" aria-label="בחירת כל הרשומות המוצגות" ${shown.every(d=>selected.has(d.id))?'checked':''}></th><th>שם</th><th>IP</th><th>MAC</th><th>סוג מכשיר</th><th>סוג רכיב</th><th>קישוריות</th><th></th></tr></thead><tbody>${shown.map(d=>`<tr class="${expanded.has(d.id)?'expanded':''}"><td><input class="selection" type="checkbox" data-select="${d.id}" aria-label="בחירת ${escapeHTML(d.name)}" ${selected.has(d.id)?'checked':''}></td><td><span class="name">${escapeHTML(d.name)}</span>${d.notes?`<span class="sub">${escapeHTML(d.notes)}</span>`:''}<button class="expand-button mobile-only" data-expand="${d.id}" aria-expanded="${expanded.has(d.id)}">${expanded.has(d.id)?'פחות פרטים ▲':'פרטים נוספים ▼'}</button></td><td data-label="IP">${ipCell(d)}</td><td data-label="MAC"><code>${escapeHTML(d.mac||'—')}</code></td><td data-label="סוג מכשיר">${escapeHTML(d.type||'—')}</td><td data-label="סוג רכיב">${escapeHTML(d.component||'—')}</td><td data-label="קישוריות">${escapeHTML(d.connectivity||'—')}</td><td><div class="row-actions"><button class="button secondary small" data-edit="${d.id}">עריכה</button><button class="button danger small" data-delete="${d.id}">מחיקה</button></div></td></tr>`).join('')}</tbody></table>`:`<div class="empty"><strong>${devices.length?'לא נמצאו מכשירים':'הרשימה עדיין ריקה'}</strong>${devices.length?'נסה חיפוש אחר':'לחץ על הוספת מכשיר כדי להתחיל'}</div>`}
+function openEditor(d){editing=d?.id??null;$('formTitle').textContent=d?'עריכת מכשיר':'הוספת מכשיר';$('form').reset();for(const key of ['name','mac','ip','type','notes','component','connectivity'])$('form').elements[key].value=d?.[key]??'';$('formError').textContent='';$('editor').showModal()}
+async function refreshStatus(){try{const r=await fetch('/api/status');if(!r.ok)throw Error();statuses=await r.json();statusesLoaded=true;render()}catch(e){statuses={};statusesLoaded=false;render()}}
+setInterval(()=>{if(!document.hidden)refreshStatus()},30000);
+$('add').onclick=()=>openEditor();$('cancel').onclick=()=>$('editor').close();$('search').oninput=render;$('typeFilter').onchange=render;$('componentFilter').onchange=render;
+$('content').onchange=e=>{if(e.target.id==='selectAll'){for(const d of visibleDevices()){if(e.target.checked)selected.add(d.id);else selected.delete(d.id)}render()}else if(e.target.matches('[data-select]')){const id=Number(e.target.dataset.select);if(e.target.checked)selected.add(id);else selected.delete(id);render()}};
+$('content').onclick=async e=>{const expand=e.target.closest('[data-expand]');if(expand){const id=Number(expand.dataset.expand);if(expanded.has(id))expanded.delete(id);else expanded.add(id);render();return}const edit=e.target.closest('[data-edit]'),del=e.target.closest('[data-delete]');if(edit){openEditor(devices.find(d=>d.id===Number(edit.dataset.edit)));return}if(del){const d=devices.find(x=>x.id===Number(del.dataset.delete));if(!confirm(`למחוק את ${d.name}?`))return;const r=await fetch(`/api/devices/${d.id}`,{method:'DELETE'});if(r.ok){toast('המכשיר נמחק');load()}else toast('המחיקה נכשלה')}};
+async function bulkDelete(all){const count=all?devices.length:selected.size;if(!count)return;const question=all?`האם את/ה בטוח/ה שברצונך למחוק את כל ${count} הרשומות? מומלץ להוריד גיבוי קודם.`:`האם את/ה בטוח/ה שברצונך למחוק ${count} רשומות שנבחרו?`;if(!confirm(question))return;try{const r=await fetch('/api/devices/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(all?{all:true}:{ids:[...selected]})});const data=await r.json();if(!r.ok)throw Error(data.error||'המחיקה נכשלה');selected.clear();toast(`נמחקו ${data.deleted} רשומות`);load()}catch(e){alert(e.message)}}
+$('deleteSelected').onclick=()=>bulkDelete(false);$('deleteAllMobile').onclick=()=>{closeMore();bulkDelete(true)};$('moreButton').onclick=()=>{const open=$('moreActions').classList.toggle('open');$('moreButton').setAttribute('aria-expanded',String(open))};document.addEventListener('click',e=>{if(!e.target.closest('#moreButton, #moreActions'))closeMore()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMore()});function closeMore(){$('moreActions').classList.remove('open');$('moreButton').setAttribute('aria-expanded','false')}
+$('form').onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target));try{const r=await fetch(editing?`/api/devices/${editing}`:'/api/devices',{method:editing?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await r.json();if(!r.ok)throw Error(result.error||'השמירה נכשלה');$('editor').close();toast('המכשיר נשמר');load()}catch(error){$('formError').textContent=error.message}};
+$('restoreButton').onclick=()=>{closeMore();$('backupFile').click()};$('backupFile').onchange=async()=>{const file=$('backupFile').files[0];if(!file)return;try{if(!confirm(`שחזור הגיבוי יחליף את כל ${devices.length} הרשומות הקיימות בתוכן הקובץ. האם את/ה בטוח/ה?`))return;const body=new FormData();body.append('file',file);const r=await fetch('/restore',{method:'POST',body});const data=await r.json();if(!r.ok)throw Error(data.error||'השחזור נכשל');selected.clear();toast(`שוחזרו ${data.restored} רשומות`);load()}catch(e){alert('השחזור נכשל: '+e.message)}finally{$('backupFile').value=''}};
+$('moreActions').querySelector('a[href="/backup.json"]').onclick=closeMore;load();
+</script>
+</body></html>
