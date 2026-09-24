@@ -20,20 +20,37 @@ python3 -m venv "$install_dir/.venv"
 mkdir -p "$install_dir/data"
 
 existing_port=$(systemctl show "$unit_name" -p Environment --value 2>/dev/null | sed -n 's/.*PORT=\([0-9]*\).*/\1/p' || true)
-if [ -n "$existing_port" ]; then
-  chosen_port=$existing_port
-else
-  chosen_port=''
-  for candidate in $(seq 8765 8799); do
-    if ! ss -ltn "( sport = :$candidate )" | tail -n +2 | grep -q .; then
-      chosen_port=$candidate
-      break
-    fi
-  done
-  if [ -z "$chosen_port" ]; then
-    echo 'No free port found between 8765 and 8799.' >&2
-    exit 1
-  fi
+# Stop our own service so its port can be tested like any other port.
+if systemctl is-active --quiet "$unit_name"; then
+  sudo systemctl stop "$unit_name"
+fi
+
+# Binding to all interfaces checks whether the app can actually listen on the LAN.
+# Prefer the previous port on reinstall; otherwise use the first available one.
+chosen_port=$(python3 - "$existing_port" <<'PY'
+import socket
+import sys
+
+previous = sys.argv[1]
+candidates = []
+if previous.isdecimal() and 1 <= int(previous) <= 65535:
+    candidates.append(int(previous))
+candidates.extend(range(8765, 8800))
+
+for port in dict.fromkeys(candidates):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+            listener.bind(("0.0.0.0", port))
+        print(port)
+        break
+    except OSError:
+        continue
+else:
+    sys.exit("No available port between 8765 and 8799.")
+PY
+)
+if [ -n "$existing_port" ] && [ "$chosen_port" != "$existing_port" ]; then
+  echo "Port $existing_port is occupied; using $chosen_port instead."
 fi
 
 sudo tee "/etc/systemd/system/$unit_name" >/dev/null <<SERVICE
@@ -59,4 +76,18 @@ SERVICE
 sudo systemctl daemon-reload
 sudo systemctl enable "$unit_name"
 sudo systemctl restart "$unit_name"
-echo "Running as $install_user on port $chosen_port. Local address: http://localhost:$chosen_port"
+sudo systemctl is-active --quiet "$unit_name" || {
+  echo "Service failed to start on port $chosen_port; inspect: sudo journalctl -u $unit_name -n 50 --no-pager" >&2
+  exit 1
+}
+server_ip=$(ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.* src \([0-9.]\+\).*/\1/p' | head -n 1)
+if [ -z "$server_ip" ]; then
+  server_ip=$(hostname -I 2>/dev/null | awk '{ print $1 }')
+fi
+echo "Installation complete. Running as $install_user on port $chosen_port."
+if [ -n "$server_ip" ]; then
+  echo "Open from a device on your home network: http://$server_ip:$chosen_port"
+else
+  echo "Could not detect a LAN IP. Run 'hostname -I' to find it. Port: $chosen_port"
+fi
+echo "To find the configured port later, run: systemctl show $unit_name -p Environment --value | tr ' ' '\\n' | sed -n 's/^PORT=//p'"
