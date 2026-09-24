@@ -1,0 +1,16 @@
+{
+  "name": "המכשירים בבית",
+  "short_name": "מכשירים בבית",
+  "description": "ניהול ידני של מכשירים ברשת הביתית",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f6fb",
+  "theme_color": "#12233b",
+  "icons": [
+    {"src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

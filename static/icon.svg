@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="בית עם רשת מכשירים">
+  <rect width="512" height="512" rx="92" fill="#12233b"/>
+  <g stroke="#fff" stroke-width="15" stroke-linecap="round" fill="none">
+    <path d="M256 156 158 252v104M256 156l98 96v104"/>
+    <path d="M175 273h47m68 0h47"/>
+  </g>
+  <circle cx="256" cy="156" r="25" fill="#fff"/>
+  <circle cx="158" cy="273" r="25" fill="#fff"/>
+  <circle cx="354" cy="273" r="25" fill="#fff"/>
+  <circle cx="256" cy="273" r="34" fill="#17b8aa"/>
+</svg>
