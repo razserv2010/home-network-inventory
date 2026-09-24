@@ -61,7 +61,7 @@ Wants=network-online.target
 
 [Service]
 User=$install_user
-WorkingDirectory="$install_dir"
+WorkingDirectory=$install_dir
 Environment=HOST=0.0.0.0
 Environment=PORT=$chosen_port
 ExecStart="$install_dir/.venv/bin/waitress-serve" --host=0.0.0.0 --port=$chosen_port app:app
@@ -73,6 +73,7 @@ NoNewPrivileges=true
 WantedBy=multi-user.target
 SERVICE
 
+sudo systemd-analyze verify "/etc/systemd/system/$unit_name"
 sudo systemctl daemon-reload
 sudo systemctl enable "$unit_name"
 sudo systemctl restart "$unit_name"
