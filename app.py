@@ -20,6 +20,50 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 ping_cache = {}
 ping_lock = Lock()
+update_lock = Lock()
+update_cache = {'checked': 0.0, 'available': False, 'supported': False}
+
+
+def running_revision():
+    if not (ROOT / '.git').exists():
+        return None
+    try:
+        commit = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '--verify', 'HEAD'],
+                                capture_output=True, text=True, timeout=3, check=True).stdout.strip()
+        branch = subprocess.run(['git', '-C', str(ROOT), 'symbolic-ref', '--quiet', '--short', 'HEAD'],
+                                capture_output=True, text=True, timeout=3, check=True).stdout.strip()
+        if re.fullmatch(r'[0-9a-f]{40,64}', commit) and branch:
+            return commit, branch
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return None
+
+
+STARTED_REVISION = running_revision()
+
+
+@app.get('/api/update-status')
+def update_status():
+    if STARTED_REVISION is None:
+        return jsonify(available=False, supported=False)
+    with update_lock:
+        if time.monotonic() - update_cache['checked'] > 3600 or not update_cache['checked']:
+            update_cache['checked'] = time.monotonic()
+            try:
+                commit, branch = STARTED_REVISION
+                result = subprocess.run(
+                    ['git', '-C', str(ROOT), 'ls-remote', '--exit-code', 'origin', f'refs/heads/{branch}'],
+                    capture_output=True, text=True, timeout=8, check=True,
+                    env={**os.environ, 'GIT_TERMINAL_PROMPT': '0',
+                         'GIT_SSH_COMMAND': 'ssh -oBatchMode=yes -oConnectTimeout=5'},
+                )
+                remote = result.stdout.split()[0]
+                if not re.fullmatch(r'[0-9a-f]{40,64}', remote):
+                    raise ValueError('Invalid Git revision')
+                update_cache.update(available=remote != commit, supported=True)
+            except (OSError, ValueError, IndexError, subprocess.SubprocessError):
+                update_cache.update(available=False, supported=False)
+        return jsonify(available=update_cache['available'], supported=update_cache['supported'])
 
 
 def connect():
