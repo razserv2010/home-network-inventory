@@ -40,6 +40,7 @@ with connect() as db:
         if column not in columns:
             db.execute(f"ALTER TABLE devices ADD COLUMN {column} TEXT NOT NULL DEFAULT ''")
     db.execute("CREATE UNIQUE INDEX IF NOT EXISTS devices_mac_unique ON devices(mac) WHERE mac != ''")
+    db.execute('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)')
 
 
 def clean(value):
@@ -67,7 +68,52 @@ def validate(data):
 
 
 def all_devices(db):
-    return [dict(row) for row in db.execute('SELECT * FROM devices ORDER BY name COLLATE NOCASE')]
+    devices = [dict(row) for row in db.execute('SELECT * FROM devices')]
+
+    def by_ip(device):
+        address = device['ip']
+        if address:
+            try:
+                parsed = ipaddress.ip_address(address)
+                return (0, parsed.version, int(parsed), device['name'].casefold(), device['id'])
+            except ValueError:
+                pass
+        return (1, 0, 0, device['name'].casefold(), device['id'])
+
+    return sorted(devices, key=by_ip)
+
+
+def validate_network_prefix(raw):
+    parts = str(raw or '').strip().rstrip('.').split('.')
+    if len(parts) != 3 or any(not part.isdecimal() or not 0 <= int(part) <= 255 for part in parts):
+        raise ValueError('יש להזין שלושה חלקים של כתובת LAN, למשל 192.168.0')
+    return '.'.join(str(int(part)) for part in parts)
+
+
+def network_prefix(db):
+    row = db.execute("SELECT value FROM settings WHERE key='network_prefix'").fetchone()
+    return row['value'] if row else '192.168.0'
+
+
+@app.get('/api/ip-options')
+def ip_options():
+    with connect() as db:
+        prefix = network_prefix(db)
+        used = {row['ip'] for row in db.execute('SELECT ip FROM devices WHERE ip != ?', ('',))}
+    return jsonify(prefix=prefix, suggestions=[f'{prefix}.{last}' for last in range(1, 255)
+                                      if f'{prefix}.{last}' not in used])
+
+
+@app.put('/api/ip-options')
+def update_ip_options():
+    try:
+        prefix = validate_network_prefix((request.get_json(silent=True) or {}).get('prefix'))
+    except ValueError as error:
+        return jsonify(error=str(error)), 400
+    with connect() as db:
+        db.execute("INSERT INTO settings(key,value) VALUES('network_prefix',?) "
+                   "ON CONFLICT(key) DO UPDATE SET value=excluded.value", (prefix,))
+    return jsonify(prefix=prefix)
 
 
 @app.get('/')
@@ -170,7 +216,9 @@ FIELDS = ('name', 'mac', 'ip', 'type', 'notes', 'component', 'connectivity')
 def download_backup():
     with connect() as db:
         devices = [{key: row[key] for key in FIELDS} for row in all_devices(db)]
-    payload = json.dumps({'format': 'home-network-inventory', 'version': 1, 'devices': devices}, ensure_ascii=False, indent=2)
+        prefix = network_prefix(db)
+    payload = json.dumps({'format': 'home-network-inventory', 'version': 1, 'devices': devices,
+                          'network_prefix': prefix}, ensure_ascii=False, indent=2)
     filename = 'network-inventory-' + datetime.now(timezone.utc).strftime('%Y-%m-%d') + '.json'
     return Response(payload, mimetype='application/json', headers={'Content-Disposition': f'attachment; filename={filename}'})
 
@@ -187,6 +235,7 @@ def restore_backup():
         devices = payload.get('devices')
         if not isinstance(devices, list) or len(devices) > 5000:
             raise ValueError('רשימת המכשירים בגיבוי אינה תקינה')
+        prefix = validate_network_prefix(payload['network_prefix']) if 'network_prefix' in payload else None
         values = []
         macs = set()
         for i, device in enumerate(devices, 1):
@@ -200,6 +249,9 @@ def restore_backup():
         with connect() as db:
             db.execute('DELETE FROM devices')
             db.executemany('INSERT INTO devices(name,mac,ip,type,notes,component,connectivity) VALUES(?,?,?,?,?,?,?)', values)
+            if prefix is not None:
+                db.execute("INSERT INTO settings(key,value) VALUES('network_prefix',?) "
+                           "ON CONFLICT(key) DO UPDATE SET value=excluded.value", (prefix,))
         return jsonify(restored=len(values))
     except (ValueError, UnicodeError, json.JSONDecodeError, sqlite3.Error) as error:
         return jsonify(error=str(error)), 400
