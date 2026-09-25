@@ -84,7 +84,7 @@ def update_status():
     with update_lock:
         age = time.monotonic() - update_cache['checked']
         force = request.args.get('refresh') == '1'
-        if not update_cache['checked'] or age > 900 or (force and age > 10):
+        if not update_cache['checked'] or age > 300 or (force and age > 10):
             update_cache['checked'] = time.monotonic()
             try:
                 api_url = f'https://api.github.com/repos/{GITHUB_REPOSITORY}/releases/latest'

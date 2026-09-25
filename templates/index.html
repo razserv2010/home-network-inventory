@@ -156,6 +156,7 @@ function openEditor(d){editing=d?.id??null;$('formTitle').textContent=d?'ערי�
 async function refreshStatus(){try{const r=await fetch('/api/status');if(!r.ok)throw Error();statuses=await r.json();statusesLoaded=true;render()}catch(e){statuses={};statusesLoaded=false;render()}}
 setInterval(()=>{if(!document.hidden)refreshStatus()},30000);
 setInterval(()=>{if(!document.hidden)refreshUpdate()},60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshUpdate()});
 $('add').onclick=()=>openEditor();$('cancel').onclick=()=>$('editor').close();$('search').oninput=render;$('typeFilter').onchange=render;$('componentFilter').onchange=render;
 $('showIpOptions').onclick=()=>{const opening=$('ipOptions').hidden;$('deviceIp').focus();$('ipOptions').hidden=!opening;if(opening)showIpChoices()};$('deviceIp').oninput=showIpChoices;$('ipOptions').onclick=e=>{const option=e.target.closest('[data-ip]');if(option){$('deviceIp').value=option.dataset.ip;$('ipOptions').hidden=true;$('deviceIp').focus()}};
 $('deviceIp').onfocus=()=>{if(!$('deviceIp').value&&!editing)$('deviceIp').value=`${lanPrefix}.`;showIpChoices()};$('deviceIp').onkeydown=e=>{if(e.key==='Escape')$('ipOptions').hidden=true};
