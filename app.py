@@ -6,6 +6,8 @@ import socket
 import sqlite3
 import subprocess
 import time
+import urllib.error
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,7 +23,8 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 ping_cache = {}
 ping_lock = Lock()
 update_lock = Lock()
-update_cache = {'checked': 0.0, 'available': False, 'supported': False}
+update_cache = {'checked': 0.0, 'available': False, 'supported': False,
+                'version': '', 'url': '', 'no_release': False}
 
 
 def running_revision():
@@ -30,10 +33,8 @@ def running_revision():
     try:
         commit = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', '--verify', 'HEAD'],
                                 capture_output=True, text=True, timeout=3, check=True).stdout.strip()
-        branch = subprocess.run(['git', '-C', str(ROOT), 'symbolic-ref', '--quiet', '--short', 'HEAD'],
-                                capture_output=True, text=True, timeout=3, check=True).stdout.strip()
-        if re.fullmatch(r'[0-9a-f]{40,64}', commit) and branch:
-            return commit, branch
+        if re.fullmatch(r'[0-9a-f]{40,64}', commit):
+            return commit
     except (OSError, subprocess.SubprocessError):
         pass
     return None
@@ -42,28 +43,72 @@ def running_revision():
 STARTED_REVISION = running_revision()
 
 
+def github_repository():
+    if STARTED_REVISION is None:
+        return None
+    try:
+        remote = subprocess.run(['git', '-C', str(ROOT), 'remote', 'get-url', 'origin'],
+                                capture_output=True, text=True, timeout=3, check=True).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    match = re.fullmatch(r'(?:https://github\.com/|git@github\.com:)([\w.-]+)/([\w.-]+?)(?:\.git)?/?', remote)
+    return f'{match[1]}/{match[2]}' if match else None
+
+
+GITHUB_REPOSITORY = github_repository()
+
+
+def release_installed(tag, commit):
+    if not isinstance(tag, str) or not re.fullmatch(r'[A-Za-z0-9._/-]{1,120}', tag):
+        raise ValueError('Invalid release tag')
+    result = subprocess.run(
+        ['git', '-C', str(ROOT), 'ls-remote', '--tags', 'origin',
+         f'refs/tags/{tag}', f'refs/tags/{tag}^{{}}'],
+        capture_output=True, text=True, timeout=8, check=True,
+        env={**os.environ, 'GIT_TERMINAL_PROMPT': '0',
+             'GIT_SSH_COMMAND': 'ssh -oBatchMode=yes -oConnectTimeout=5'},
+    )
+    refs = dict(line.split('\t', 1)[::-1] for line in result.stdout.splitlines() if '\t' in line)
+    tagged_commit = refs.get(f'refs/tags/{tag}^{{}}') or refs.get(f'refs/tags/{tag}')
+    if not tagged_commit or not re.fullmatch(r'[0-9a-f]{40,64}', tagged_commit):
+        raise ValueError('Release tag not found')
+    ancestor = subprocess.run(['git', '-C', str(ROOT), 'merge-base', '--is-ancestor', tagged_commit, commit],
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3, check=False)
+    return ancestor.returncode == 0
+
+
 @app.get('/api/update-status')
 def update_status():
-    if STARTED_REVISION is None:
+    if STARTED_REVISION is None or GITHUB_REPOSITORY is None:
         return jsonify(available=False, supported=False)
     with update_lock:
-        if time.monotonic() - update_cache['checked'] > 3600 or not update_cache['checked']:
+        age = time.monotonic() - update_cache['checked']
+        force = request.args.get('refresh') == '1'
+        if not update_cache['checked'] or age > 900 or (force and age > 10):
             update_cache['checked'] = time.monotonic()
             try:
-                commit, branch = STARTED_REVISION
-                result = subprocess.run(
-                    ['git', '-C', str(ROOT), 'ls-remote', '--exit-code', 'origin', f'refs/heads/{branch}'],
-                    capture_output=True, text=True, timeout=8, check=True,
-                    env={**os.environ, 'GIT_TERMINAL_PROMPT': '0',
-                         'GIT_SSH_COMMAND': 'ssh -oBatchMode=yes -oConnectTimeout=5'},
-                )
-                remote = result.stdout.split()[0]
-                if not re.fullmatch(r'[0-9a-f]{40,64}', remote):
-                    raise ValueError('Invalid Git revision')
-                update_cache.update(available=remote != commit, supported=True)
-            except (OSError, ValueError, IndexError, subprocess.SubprocessError):
-                update_cache.update(available=False, supported=False)
-        return jsonify(available=update_cache['available'], supported=update_cache['supported'])
+                api_url = f'https://api.github.com/repos/{GITHUB_REPOSITORY}/releases/latest'
+                req = urllib.request.Request(api_url, headers={'Accept': 'application/vnd.github+json',
+                                                                'User-Agent': 'home-network-inventory'})
+                try:
+                    with urllib.request.urlopen(req, timeout=8) as response:
+                        release = json.load(response)
+                except urllib.error.HTTPError as error:
+                    if error.code != 404:
+                        raise
+                    update_cache.update(available=False, supported=True, no_release=True, version='', url='')
+                else:
+                    tag = release['tag_name']
+                    installed = release_installed(tag, STARTED_REVISION)
+                    url = release.get('html_url', '')
+                    expected = f'https://github.com/{GITHUB_REPOSITORY}/releases/tag/'
+                    if not isinstance(url, str) or not url.startswith(expected):
+                        raise ValueError('Invalid release URL')
+                    update_cache.update(available=not installed, supported=True,
+                                        no_release=False, version=tag, url=url)
+            except (OSError, ValueError, KeyError, urllib.error.URLError, subprocess.SubprocessError):
+                update_cache.update(available=False, supported=False, no_release=False, version='', url='')
+        return jsonify({key: update_cache[key] for key in ('available', 'supported', 'no_release', 'version', 'url')})
 
 
 def connect():
