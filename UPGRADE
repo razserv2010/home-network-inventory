@@ -15,8 +15,24 @@ if [ -n "$(git -C "$project_dir" status --porcelain --untracked-files=no)" ]; th
   echo 'Local changes to project files detected. Save or discard them before updating.' >&2
   exit 1
 fi
+if ! systemctl cat home-inventory.service >/dev/null 2>&1; then
+  echo 'The home-inventory.service installation was not found. Install first with bash install.sh.' >&2
+  exit 1
+fi
+if [ ! -x "$project_dir/.venv/bin/pip" ]; then
+  echo 'The Python environment was not found. Install first with bash install.sh.' >&2
+  exit 1
+fi
 
 echo 'Downloading the latest project files...'
 git -C "$project_dir" pull --ff-only
-echo 'Installing the update and restarting the service...'
-bash "$project_dir/install.sh"
+echo 'Updating dependencies...'
+"$project_dir/.venv/bin/pip" install -r "$project_dir/requirements.txt"
+echo 'Restarting the existing service...'
+sudo systemctl restart home-inventory.service
+sudo systemctl is-active --quiet home-inventory.service || {
+  echo 'The service did not start. Check: sudo journalctl -u home-inventory.service -n 50 --no-pager' >&2
+  exit 1
+}
+echo 'Update complete. The service port setting was not changed.'
+systemctl show home-inventory.service -p Environment --value | tr ' ' '\n' | sed -n 's/^PORT=/Port: /p'
