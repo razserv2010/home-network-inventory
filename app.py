@@ -2,6 +2,7 @@ import ipaddress
 import json
 import os
 import re
+import socket
 import sqlite3
 import subprocess
 import time
@@ -90,9 +91,37 @@ def validate_network_prefix(raw):
     return '.'.join(str(int(part)) for part in parts)
 
 
+def detect_lan_prefix():
+    # A UDP connect selects the preferred local interface without sending data.
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.connect(('1.1.1.1', 80))
+            address = ipaddress.IPv4Address(probe.getsockname()[0])
+            if address.is_private and not address.is_link_local and not address.is_loopback:
+                return '.'.join(str(address).split('.')[:3])
+    except OSError:
+        pass
+    try:
+        output = subprocess.run(['hostname', '-I'], capture_output=True, text=True, timeout=2, check=False).stdout
+        for raw in output.split():
+            try:
+                address = ipaddress.IPv4Address(raw)
+                if address.is_private and not address.is_link_local and not address.is_loopback:
+                    return '.'.join(str(address).split('.')[:3])
+            except ipaddress.AddressValueError:
+                continue
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return '192.168.0'
+
+
 def network_prefix(db):
     row = db.execute("SELECT value FROM settings WHERE key='network_prefix'").fetchone()
-    return row['value'] if row else '192.168.0'
+    if row:
+        return row['value']
+    prefix = detect_lan_prefix()
+    db.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('network_prefix',?)", (prefix,))
+    return db.execute("SELECT value FROM settings WHERE key='network_prefix'").fetchone()['value']
 
 
 @app.get('/api/ip-options')
