@@ -56,6 +56,42 @@ def github_repository():
 
 
 GITHUB_REPOSITORY = github_repository()
+UPGRADE_STATUS = ROOT / 'data' / 'upgrade-status.json'
+
+
+@app.get('/api/upgrade-status')
+def upgrade_status():
+    try:
+        status = json.loads(UPGRADE_STATUS.read_text())
+        if status.get('state') in ('running', 'success', 'error'):
+            return jsonify(status)
+    except (OSError, ValueError):
+        pass
+    return jsonify(state='idle', message='')
+
+
+@app.post('/api/upgrade')
+def start_upgrade():
+    origin = request.headers.get('Origin')
+    if origin and origin.rstrip('/') != request.host_url.rstrip('/'):
+        abort(403)
+    if GITHUB_REPOSITORY is None:
+        return jsonify(error='עדכון דרך הממשק זמין רק להתקנה שבוצעה מ־GitHub.'), 400
+    try:
+        current = json.loads(UPGRADE_STATUS.read_text())
+        if current.get('state') == 'running' and time.time() - float(current.get('time', 0)) < 600:
+            return jsonify(error='עדכון כבר מתבצע.'), 409
+    except (OSError, ValueError, TypeError):
+        pass
+    started_at = time.time()
+    try:
+        result = subprocess.run(['sudo', '-n', '/usr/bin/systemctl', 'start', '--no-block',
+                                 'home-inventory-upgrade.service'], capture_output=True, text=True, timeout=8)
+    except (OSError, subprocess.TimeoutExpired):
+        return jsonify(error='לא ניתן להפעיל את העדכון. יש להגדיר פעם אחת: bash setup-web-upgrade.sh'), 503
+    if result.returncode:
+        return jsonify(error='לא ניתן להפעיל את העדכון. יש להגדיר פעם אחת: bash setup-web-upgrade.sh'), 503
+    return jsonify(started=True, started_at=started_at), 202
 
 
 def release_installed(tag, commit):

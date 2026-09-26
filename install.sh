@@ -74,6 +74,7 @@ WantedBy=multi-user.target
 SERVICE
 
 sudo systemd-analyze verify "/etc/systemd/system/$unit_name"
+bash "$install_dir/setup-web-upgrade.sh"
 sudo systemctl daemon-reload
 sudo systemctl enable "$unit_name"
 sudo systemctl restart "$unit_name"
